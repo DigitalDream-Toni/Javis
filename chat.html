@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jarvis 2.0 — Chat</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="chat-page is-loading">
+  <div id="page-preloader" class="page-preloader" role="status" aria-label="Loading Jarvis"><div class="preloader-mark">J</div><p>Preparing Jarvis 2.0</p><span class="preloader-line"></span></div>
+  <section id="voice-preference-modal" class="voice-preference-modal" role="dialog" aria-modal="true" aria-labelledby="voice-preference-title">
+    <div class="voice-preference-card">
+      <span class="voice-preference-mark">J</span>
+      <p class="voice-preference-kicker">Welcome to Jarvis</p>
+      <h1 id="voice-preference-title">Choose your voice preference</h1>
+      <p>Choose a voice for Jarvis before starting your chat.</p>
+      <div class="voice-preference-options">
+        <button type="button" data-voice-preference="male">Male</button>
+        <button type="button" data-voice-preference="female">Female</button>
+      </div>
+    </div>
+  </section>
+  <header class="chat-header">
+    <a class="logo" href="index.html"><span class="logo-mark">J</span> Jarvis <em>2.0</em></a>
+    <div class="header-actions">
+      <button id="new-chat" class="header-button" type="button">＋ <span>New Chat</span></button><button id="save-chat" class="header-button" type="button">⇩ <span>Save Chat</span></button>
+    </div>
+  </header>
+  <main class="chat-main">
+    <section id="messages" class="messages" aria-live="polite"></section>
+  </main>
+  <footer class="composer-area">
+    <div id="document-status" class="document-status" hidden><span id="document-name"></span><button id="remove-document" type="button" aria-label="Remove document">×</button></div>
+    <form id="chat-form" class="composer">
+      <label class="composer-icon text-control" title="Add a text document">Attach<input id="document-input" type="file" accept=".txt,.md,.csv,.json,text/plain,text/markdown,text/csv,application/json" hidden></label>
+      <textarea id="message-input" rows="1" maxlength="4000" placeholder="Message Jarvis…" aria-label="Message Jarvis"></textarea>
+      <button id="voice-button" class="composer-icon" type="button" title="Speak to Jarvis" aria-label="Speak to Jarvis"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14.5a3 3 0 0 0 3-3v-5a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Z"></path><path d="M18 11.5a6 6 0 0 1-12 0M12 17.5v3M8.5 20.5h7"></path></svg></button>
+      <button id="send-button" class="send-button" type="submit" aria-label="Send message">↑</button>
+    </form>
+    <p>Digital Dream: Jarvis can make mistakes. Check important information.</p>
+  </footer>
+  <aside id="leave-notice" class="leave-notice" hidden aria-live="assertive">
+    <p class="leave-notice-title">Leave this chat?</p>
+    <p>Your unsaved messages will be cleared when you leave this page.</p>
+    <div><button id="stay-button" type="button" class="stay-button">Stay</button><button id="leave-button" type="button" class="leave-button">Leave anyway</button></div>
+  </aside>
+  <!-- config.js must load before script.js so your API key is available. -->
+  <script src="config.js"></script><script src="script.js"></script><script src="preloader.js"></script>
+</body>
+</html>

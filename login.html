@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Welcome Back — Jarvis 2.0</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="auth-page is-loading" data-welcome-message="Welcome back to Jarvis. I’m glad to see you again. When you’re ready, we can help you think clearly, solve problems, and take the next step.">
+  <div id="page-preloader" class="page-preloader" role="status" aria-label="Loading Jarvis"><div class="preloader-mark">J</div><p>Preparing Jarvis 2.0</p><span class="preloader-line"></span></div>
+  <main class="auth-layout">
+    <section class="auth-introduction">
+      <a class="auth-brand" href="#" aria-label="Jarvis"><span>J</span> Jarvis <em>2.0</em></a>
+      <div class="auth-intro-copy"><p>WELCOME BACK</p><h1>Pick up where<br>your thinking left off.</h1><span>Jarvis is here to help you make sense of ideas, problems, and the next thing in front of you.</span></div>
+      <p class="auth-credit">Digital Dream · Jarvis 2.0</p>
+    </section>
+    <section class="auth-panel" aria-labelledby="login-title">
+      <div class="auth-card">
+        <p class="auth-eyebrow">YOUR JARVIS SPACE</p><h2 id="login-title">Welcome back.</h2><p class="auth-description">Sign in to continue your conversations with Jarvis.</p>
+        <form class="auth-form" data-preview-form>
+          <label>Email address<input type="email" autocomplete="email" placeholder="you@example.com" required></label>
+          <label>Password<input type="password" autocomplete="current-password" placeholder="Enter your password" required></label>
+          <div class="auth-form-row"><label class="remember-choice"><input type="checkbox"> Remember me</label><a href="#">Forgot password?</a></div>
+          <button class="auth-primary" type="submit">Log in <span>→</span></button>
+        </form>
+        <p class="auth-divider"><span>or continue with</span></p>
+        <div class="social-sign-in"><button type="button" data-social="Google"><b class="google-mark">G</b> Google</button><button type="button" data-social="Apple"><b class="apple-mark">●</b> Apple</button><button type="button" data-social="Facebook"><b class="facebook-mark">f</b> Facebook</button></div>
+        <p class="auth-switch">New to Jarvis? <a href="signup.html">Create an account</a></p>
+        <p class="auth-preview-status" aria-live="polite"></p>
+        <button id="welcome-voice-button" class="welcome-voice-button" type="button" hidden>Hear Jarvis’s welcome</button>
+      </div>
+    </section>
+  </main>
+  <script src="auth.js"></script><script src="preloader.js"></script>
+</body>
+</html>
