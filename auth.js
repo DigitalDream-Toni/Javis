@@ -5,7 +5,8 @@ let welcomeStarted = false;
 
 function findWelcomeVoice() {
   const voices = speechSynthesis.getVoices().filter(voice => voice.lang.toLowerCase().startsWith('en'));
-  return voices.find(voice => /microsoft (aria|ava|jenny|andrew|brian|ryan|guy)|google us english|samantha|alex/i.test(voice.name)) || voices[0];
+  const preferredVoices = voices.filter(voice => /microsoft (aria|ava|jenny|andrew|brian|ryan|guy)|google us english|samantha|alex/i.test(voice.name));
+  return preferredVoices.find(voice => /natural|neural|online/i.test(voice.name)) || preferredVoices[0] || voices.find(voice => /natural|neural|online/i.test(voice.name)) || voices[0];
 }
 
 function speakWelcome() {
@@ -13,7 +14,7 @@ function speakWelcome() {
   const utterance = new SpeechSynthesisUtterance(welcomeMessage);
   const voice = findWelcomeVoice();
   if (voice) { utterance.voice = voice; utterance.lang = voice.lang; }
-  utterance.rate = 0.94; utterance.pitch = 1.02; utterance.volume = 1;
+  utterance.rate = 1.07; utterance.pitch = 1.14; utterance.volume = 1;
   utterance.onstart = () => { welcomeStarted = true; welcomeVoiceButton.hidden = true; };
   utterance.onerror = () => { welcomeVoiceButton.hidden = false; };
   speechSynthesis.cancel();
