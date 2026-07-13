@@ -13,6 +13,7 @@ Jarvis 2.0 is a browser-based conversational AI demo by Digital Dream. It includ
 - Automatic message-area resizing
 - Voice conversations that prefer a natural English male browser voice, where Web Speech APIs are supported
 - A required per-session voice preference modal for Male or Female Jarvis voices
+- Standalone login and sign-up design previews with automatic Jarvis welcome messages
 - Loading screen and unsaved-chat warning
 - No account or browser storage; refreshing clears the conversation
 
@@ -24,7 +25,7 @@ Jarvis 2.0 is a browser-based conversational AI demo by Digital Dream. It includ
 | `chat.html` | Chat interface markup |
 | `login.html` | Standalone login-page design preview |
 | `signup.html` | Standalone sign-up-page design preview |
-| `style.css` | Shared styling for both pages |
+| `style.css` | Shared styling for all pages |
 | `script.js` | Chat, attachments, exports, voice, and UI behavior |
 | `auth.js` | Login/sign-up preview behavior and welcome voice |
 | `config.js` | Groq API configuration |
@@ -36,6 +37,15 @@ Jarvis 2.0 is a browser-based conversational AI demo by Digital Dream. It includ
 This is a static site, so no package installation or build step is required. Serve the folder with any local web server, then open the supplied local address in a browser. For example, with VS Code's Live Server extension, use **Open with Live Server** on `index.html`.
 
 Opening `index.html` directly may work, but a local server is recommended because the app makes API requests and uses browser features such as file handling and speech recognition.
+
+## Validate JavaScript
+
+Node.js LTS is installed for local syntax checks. Run:
+
+```powershell
+node --check auth.js
+git diff --check
+```
 
 ## Configure Groq
 
@@ -54,7 +64,13 @@ const GROQ_MODEL = 'llama-3.3-70b-versatile';
 
 ## Account-page previews
 
-`login.html` and `signup.html` are standalone visual previews and are not linked from the landing or chat pages. Their email/password and social sign-in controls do not authenticate users yet. The pages attempt to play a Jarvis welcome automatically; if the browser blocks automatic audio, use the visible **Hear Jarvis’s welcome** control instead.
+`login.html` and `signup.html` are standalone visual previews and are not linked from the landing or chat pages. Their form and social sign-in controls do not authenticate users yet.
+
+- **Login:** Email or username, password, forgot-password link, and Google, Apple ID, and Facebook options.
+- **Sign-up:** Full name, email, password, confirm password, and Google, Apple ID, and Facebook options.
+- **Welcome voice:** Login says, "Welcome back, I'm Jarvis 2.0. Ready to continue your journey." Sign-up says, "Welcome to Jarvis 2.0. I'm here to assist you. Let's get started."
+
+Each page requests its welcome voice automatically after the loading screen. The shared voice helper prefers natural or neural English voices where available and uses a livelier speaking rate and pitch. If a browser blocks automatic audio, the visible **Hear Jarvis's welcome** control can replay it.
 
 ## Browser support
 
