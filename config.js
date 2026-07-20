@@ -6,7 +6,7 @@
   website can see this key. Use it only for a private demo; a real public site
   needs a secure backend to keep the key private.
 */
-const API_KEY = "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";
+const API_KEY = "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";
 
 // Jarvis uses Llama 3.3 70B for every chat.
 const GROQ_MODEL = "llama-3.3-70b-versatile";
