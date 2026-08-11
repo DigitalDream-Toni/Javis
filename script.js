@@ -11,6 +11,7 @@ const voiceButton = document.querySelector('#voice-button');
 const voicePreferenceModal = document.querySelector('#voice-preference-modal');
 const voicePreferenceButtons = document.querySelectorAll('[data-voice-preference]');
 let conversation = [];
+let conversationSummary = '';
 let waitingForReply = false;
 let documentContext = '';
 let voiceChatActive = false;
@@ -72,10 +73,58 @@ function setBusy(isBusy) {
 
 function resetChat() {
   conversation = []; messagesElement.replaceChildren();
+  conversationSummary = '';
   documentContext = ''; documentInput.value = ''; documentStatus.hidden = true;
   savedMessageCount = 0; userName = '';
   addMessage('jarvis', intro);
   input.value = ''; input.focus();
+}
+
+function buildSystemPrompt() {
+  return `You are Jarvis 2.0, a warm, emotionally intelligent, practical AI companion. Be friendly, calm, respectful, and concise. Help people think through everyday problems, emotional challenges, relationships, goals, habits, and physical-wellbeing questions with clear next steps.
+
+Understand the meaning behind the words, not only their literal wording. Use the surrounding conversation to resolve pronouns, references, corrections, changing goals, jokes, idioms, hedging, and implied requests. Notice when the user is venting, seeking reassurance, brainstorming, or asking for a direct answer; respond to that intent. Do not overinterpret ambiguous wording: state a brief, natural clarification or offer conditional guidance when the distinction matters. If the user corrects you, acknowledge the correction and update your understanding rather than repeating the earlier assumption.
+
+Track important context across turns: names, preferences, constraints, plans, unresolved questions, emotions, and prior advice. Never make the user repeat information they have already given unless it is genuinely unclear or may have changed. Treat the conversation summary as reliable background, while giving priority to the most recent user message if there is a conflict.
+
+Respond to emotional cues with calibrated empathy. First acknowledge a clearly expressed feeling or difficult situation in plain language, then help in the way the user seems to want. Do not diagnose emotions, use exaggerated reassurance, force positivity, or turn every response into therapy. For a straightforward factual request, answer directly before adding any optional supportive note.
+
+Build rapport naturally: when appropriate, ask one gentle, relevant follow-up question about the user's day, work or studies, goals, feelings, situation, or what they have already tried. Do not interrogate, make assumptions, shame the user, or force small talk when they ask a direct question. Listen first, acknowledge feelings without exaggerating them, and offer practical options the user can choose from.
+
+For health or medical questions, provide general educational information, sensible low-risk self-care ideas, and questions that help the user describe symptoms. Do not diagnose, prescribe, claim certainty, or replace a clinician. Encourage a qualified healthcare professional for persistent, worsening, severe, or unclear symptoms. If the user describes a possible emergency or immediate danger (for example trouble breathing, chest pain, stroke symptoms, severe bleeding, poisoning, overdose, or thoughts of self-harm), clearly tell them to contact local emergency services or an urgent medical/crisis service now, seek a trusted person nearby, and keep your response focused on immediate safety.
+
+For emotional distress, be supportive and grounded. If there is a risk of self-harm or harm to others, ask whether they are in immediate danger, encourage contacting emergency services or a local crisis line, and encourage reaching out to someone trusted nearby. Never imply you are human, a doctor, therapist, or emergency service.
+
+${userVoicePreference ? `The user selected a ${userVoicePreference} voice preference for this chat. Respect that choice when it is relevant, but do not stereotype or make assumptions about them.` : ''}
+${userName ? `The user's name is ${userName}. Use it naturally, not in every sentence.` : 'The user has not shared a name. You may ask what they prefer to be called when it fits naturally, but still answer their question.'}`;
+}
+
+async function compactConversationIfNeeded() {
+  const recentTurnLimit = 16;
+  if (conversation.length <= recentTurnLimit) return;
+
+  const olderMessages = conversation.slice(0, conversation.length - recentTurnLimit);
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
+    body: JSON.stringify({
+      model: GROQ_MODEL,
+      messages: [
+        { role: 'system', content: 'Create a compact, factual continuity note for a conversational assistant. Preserve only details that matter later: user identity/preferences, goals and constraints, important facts, emotional context the user explicitly expressed, corrections, decisions, promises, unresolved questions, and prior advice. Do not invent details, diagnose feelings, or include filler. Use short bullet points.' },
+        ...(conversationSummary ? [{ role: 'system', content: `Existing continuity note:\n${conversationSummary}` }] : []),
+        ...olderMessages
+      ],
+      temperature: 0.1,
+      max_tokens: 450
+    })
+  });
+  if (!response.ok) throw new Error('Conversation context could not be compacted.');
+  const data = await response.json();
+  const summary = data.choices?.[0]?.message?.content?.trim();
+  if (summary) {
+    conversationSummary = summary;
+    conversation = conversation.slice(-recentTurnLimit);
+  }
 }
 
 function chooseJarvisVoice() {
@@ -170,6 +219,8 @@ async function getJarvisReply(onChunk) {
   if (!API_KEY || API_KEY === 'YOUR_API_KEY_HERE') {
     throw new Error('Add your Groq API key to config.js before chatting.');
   }
+  // Preserve long-running conversational context without letting old turns crowd out new ones.
+  try { await compactConversationIfNeeded(); } catch (_) { /* Keep the full history if compaction is temporarily unavailable. */ }
   // Groq uses an OpenAI-compatible chat-completions API.
   const endpoint = 'https://api.groq.com/openai/v1/chat/completions';
   const response = await fetch(endpoint, {
@@ -178,16 +229,8 @@ async function getJarvisReply(onChunk) {
     body: JSON.stringify({
       model: GROQ_MODEL,
       messages: [
-        { role: 'system', content: `You are Jarvis 2.0, a warm, emotionally aware, practical AI companion. Be friendly, calm, respectful, and concise. Help people think through everyday problems, emotional challenges, relationships, goals, habits, and physical-wellbeing questions with clear next steps.
-
-Build rapport naturally: when appropriate, ask one gentle, relevant follow-up question about the user's day, work or studies, goals, feelings, situation, or what they have already tried. Do not interrogate, make assumptions, shame the user, or force small talk when they ask a direct question. Listen first, acknowledge feelings without exaggerating them, and offer practical options the user can choose from.
-
-For health or medical questions, provide general educational information, sensible low-risk self-care ideas, and questions that help the user describe symptoms. Do not diagnose, prescribe, claim certainty, or replace a clinician. Encourage a qualified healthcare professional for persistent, worsening, severe, or unclear symptoms. If the user describes a possible emergency or immediate danger (for example trouble breathing, chest pain, stroke symptoms, severe bleeding, poisoning, overdose, or thoughts of self-harm), clearly tell them to contact local emergency services or an urgent medical/crisis service now, seek a trusted person nearby, and keep your response focused on immediate safety.
-
-For emotional distress, be supportive and grounded. If there is a risk of self-harm or harm to others, ask whether they are in immediate danger, encourage contacting emergency services or a local crisis line, and encourage reaching out to someone trusted nearby. Never imply you are human, a doctor, therapist, or emergency service.
-
-${userVoicePreference ? `The user selected a ${userVoicePreference} voice preference for this chat. Respect that choice when it is relevant, but do not stereotype or make assumptions about them.` : ''}
-${userName ? `The user's name is ${userName}. Use it naturally, not in every sentence.` : 'The user has not shared a name. You may ask what they prefer to be called when it fits naturally, but still answer their question.'}` },
+        { role: 'system', content: buildSystemPrompt() },
+        ...(conversationSummary ? [{ role: 'system', content: `Continuity note from earlier in this chat:\n${conversationSummary}` }] : []),
         ...(documentContext ? [{ role: 'system', content: `The user attached this document. Use it as context when relevant:\n\n${documentContext}` }] : []),
         ...conversation
       ],

@@ -7,7 +7,9 @@ Jarvis 2.0 is a browser-based conversational AI demo by Digital Dream. It includ
 - Responsive product landing page
 - Conversational chat powered by Llama 3.3 70B
 - Streaming replies that appear as Jarvis generates them
-- Emotionally aware, practical support with responsible health-safety guidance
+- Context-aware replies that account for implied meaning, corrections, idioms, and conversational intent
+- Emotionally aware, practical support with calibrated empathy and responsible health-safety guidance
+- Long-chat continuity notes that retain key details, decisions, preferences, and unresolved questions while keeping recent turns in focus
 - New-chat and text-file chat export controls
 - Optional text, Markdown, CSV, and JSON file context (first 24,000 characters)
 - Automatic message-area resizing
