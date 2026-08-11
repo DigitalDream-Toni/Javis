@@ -11,6 +11,9 @@ const attachmentPreview = document.querySelector('#attachment-preview');
 const voiceButton = document.querySelector('#voice-button');
 const voicePreferenceModal = document.querySelector('#voice-preference-modal');
 const voicePreferenceButtons = document.querySelectorAll('[data-voice-preference]');
+const voiceScene = document.querySelector('#voice-scene');
+const voiceSceneStatus = document.querySelector('#voice-scene-status');
+const voiceSceneHint = document.querySelector('#voice-scene-hint');
 let conversation = [];
 let conversationSummary = '';
 let waitingForReply = false;
@@ -78,6 +81,27 @@ function removeTyping() { document.querySelector('#typing-indicator')?.remove();
 
 function setBusy(isBusy) {
   waitingForReply = isBusy; sendButton.disabled = isBusy; input.disabled = isBusy;
+}
+
+function setVoiceScene(state, hint = '') {
+  if (!voiceChatActive) {
+    voiceScene.hidden = true;
+    return;
+  }
+  const labels = { listening: 'Listening…', thinking: 'Thinking…', speaking: 'Jarvis is speaking…' };
+  const moodClass = voiceScene.classList.contains('is-warm') ? ' is-warm' : voiceScene.classList.contains('is-creative') ? ' is-creative' : '';
+  voiceScene.hidden = false;
+  voiceScene.className = `voice-scene is-${state}${moodClass}`;
+  voiceSceneStatus.textContent = labels[state] || 'Voice conversation active';
+  voiceSceneHint.textContent = hint || (state === 'listening' ? 'Speak naturally. Jarvis is here.' : state === 'thinking' ? 'Connecting your words to the conversation…' : 'Tap the voice button anytime to end the session.');
+}
+
+function setSceneMood(message) {
+  if (!voiceChatActive) return;
+  const normalized = message.toLowerCase();
+  voiceScene.classList.remove('is-warm', 'is-creative');
+  if (/sad|hurt|worried|anxious|stressed|lonely|upset|grief|tired/.test(normalized)) voiceScene.classList.add('is-warm');
+  if (/write|story|poem|idea|design|create|imagine|music/.test(normalized)) voiceScene.classList.add('is-creative');
 }
 
 function resetChat() {
@@ -210,6 +234,7 @@ function speak(text) {
     return;
   }
   jarvisIsSpeaking = true;
+  setVoiceScene('speaking');
   const playbackId = ++voicePlaybackId;
   speechSynthesis.cancel();
   const spokenText = text
@@ -232,11 +257,13 @@ function speak(text) {
   voice.onend = () => {
     if (playbackId !== voicePlaybackId) return;
     jarvisIsSpeaking = false;
+    setVoiceScene('listening');
     resumeVoiceListening();
   };
   voice.onerror = () => {
     if (playbackId !== voicePlaybackId) return;
     jarvisIsSpeaking = false;
+    setVoiceScene('listening');
     resumeVoiceListening();
   };
   speechSynthesis.speak(voice);
@@ -340,6 +367,7 @@ form.addEventListener('submit', async event => {
   }
   if (fileForTurn) clearAttachment();
   input.value = ''; autoResize(); setBusy(true); showTyping();
+  if (voiceChatActive) setVoiceScene('thinking');
   try {
     let replyBubble = null;
     const reply = await getJarvisReply(chunk => {
@@ -502,10 +530,11 @@ if (SpeechRecognition) {
     // Abort rather than wait for the current phrase to finish. The onend handler
     // sees voiceChatActive is false, so listening cannot restart automatically.
     if (recognitionRunning) recognition.abort();
+    setVoiceScene('idle');
     updateVoiceButton();
   }
 
-  recognition.onstart = () => { recognitionRunning = true; };
+  recognition.onstart = () => { recognitionRunning = true; setVoiceScene('listening'); };
   recognition.onend = () => {
     recognitionRunning = false;
     // Recognition naturally ends after each utterance, so restart it while the session remains active.
@@ -521,6 +550,8 @@ if (SpeechRecognition) {
   };
   recognition.onresult = event => {
     input.value = event.results[0][0].transcript;
+    setVoiceScene('thinking', 'I heard you. Let me think that through…');
+    setSceneMood(input.value);
     autoResize();
     form.requestSubmit();
     // Do not leave recognition running while Jarvis is preparing and speaking a reply.
@@ -535,6 +566,7 @@ if (SpeechRecognition) {
     }
     voiceChatActive = true;
     updateVoiceButton();
+    setVoiceScene('listening');
     resumeVoiceListening();
   });
   updateVoiceButton();

@@ -32,6 +32,14 @@
   </header>
   <main class="chat-main">
     <section id="messages" class="messages" aria-live="polite"></section>
+    <section id="voice-scene" class="voice-scene" hidden aria-live="polite" aria-label="Jarvis voice conversation">
+      <div class="scene-stars" aria-hidden="true"></div>
+      <p class="voice-scene-kicker">Jarvis voice space</p>
+      <div class="jarvis-presence" aria-hidden="true"><span class="presence-core">J</span><span class="presence-ring ring-one"></span><span class="presence-ring ring-two"></span><span class="presence-ring ring-three"></span></div>
+      <div class="voice-equalizer" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <p id="voice-scene-status" class="voice-scene-status">Listening…</p>
+      <p id="voice-scene-hint" class="voice-scene-hint">Speak naturally. Jarvis is here.</p>
+    </section>
   </main>
   <footer class="composer-area">
     <div id="attachment-status" class="attachment-status" hidden><img id="attachment-preview" alt="Selected image preview" hidden><span id="attachment-name"></span><button id="remove-attachment" type="button" aria-label="Remove attachment">×</button></div>
