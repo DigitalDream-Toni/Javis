@@ -34,9 +34,9 @@
     <section id="messages" class="messages" aria-live="polite"></section>
   </main>
   <footer class="composer-area">
-    <div id="document-status" class="document-status" hidden><span id="document-name"></span><button id="remove-document" type="button" aria-label="Remove document">×</button></div>
+    <div id="attachment-status" class="attachment-status" hidden><img id="attachment-preview" alt="Selected image preview" hidden><span id="attachment-name"></span><button id="remove-attachment" type="button" aria-label="Remove attachment">×</button></div>
     <form id="chat-form" class="composer">
-      <label class="composer-icon text-control" title="Add a text document">Attach<input id="document-input" type="file" accept=".txt,.md,.csv,.json,text/plain,text/markdown,text/csv,application/json" hidden></label>
+      <label class="composer-icon image-control" title="Attach a file">Attach<input id="attachment-input" type="file" accept="image/*,.txt,.md,.csv,.json,.pdf,.docx,text/plain,text/markdown,text/csv,application/json,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden></label>
       <textarea id="message-input" rows="1" maxlength="4000" placeholder="Message Jarvis…" aria-label="Message Jarvis"></textarea>
       <button id="voice-button" class="composer-icon" type="button" title="Speak to Jarvis" aria-label="Speak to Jarvis"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14.5a3 3 0 0 0 3-3v-5a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Z"></path><path d="M18 11.5a6 6 0 0 1-12 0M12 17.5v3M8.5 20.5h7"></path></svg></button>
       <button id="send-button" class="send-button" type="submit" aria-label="Send message">↑</button>

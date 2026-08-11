@@ -4,16 +4,18 @@ const chatMain = document.querySelector('.chat-main');
 const form = document.querySelector('#chat-form');
 const input = document.querySelector('#message-input');
 const sendButton = document.querySelector('#send-button');
-const documentInput = document.querySelector('#document-input');
-const documentStatus = document.querySelector('#document-status');
-const documentName = document.querySelector('#document-name');
+const attachmentInput = document.querySelector('#attachment-input');
+const attachmentStatus = document.querySelector('#attachment-status');
+const attachmentName = document.querySelector('#attachment-name');
+const attachmentPreview = document.querySelector('#attachment-preview');
 const voiceButton = document.querySelector('#voice-button');
 const voicePreferenceModal = document.querySelector('#voice-preference-modal');
 const voicePreferenceButtons = document.querySelectorAll('[data-voice-preference]');
 let conversation = [];
 let conversationSummary = '';
 let waitingForReply = false;
-let documentContext = '';
+let attachedFile = null;
+let conversationUsesVision = false;
 let voiceChatActive = false;
 let recognitionRunning = false;
 let jarvisIsSpeaking = false;
@@ -44,13 +46,20 @@ function createAvatar() {
   return avatar;
 }
 
-function addMessage(role, text, isError = false) {
+function addMessage(role, text, isError = false, imageUrl = '') {
   const row = document.createElement('article');
   row.className = `message-row ${role}${isError ? ' error-message' : ''}`;
   if (role === 'jarvis') row.append(createAvatar());
   const bubble = document.createElement('div');
   bubble.className = 'message-bubble';
   bubble.textContent = text;
+  if (imageUrl) {
+    const image = document.createElement('img');
+    image.className = 'message-image';
+    image.src = imageUrl;
+    image.alt = 'Attached image';
+    bubble.append(image);
+  }
   row.append(bubble);
   messagesElement.append(row);
   scrollToLatest();
@@ -74,7 +83,7 @@ function setBusy(isBusy) {
 function resetChat() {
   conversation = []; messagesElement.replaceChildren();
   conversationSummary = '';
-  documentContext = ''; documentInput.value = ''; documentStatus.hidden = true;
+  clearAttachment(); conversationUsesVision = false;
   savedMessageCount = 0; userName = '';
   addMessage('jarvis', intro);
   input.value = ''; input.focus();
@@ -137,7 +146,7 @@ async function compactConversationIfNeeded() {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
     body: JSON.stringify({
-      model: GROQ_MODEL,
+      model: conversationUsesVision ? GROQ_VISION_MODEL : GROQ_MODEL,
       messages: [
         { role: 'system', content: 'Create a compact, factual continuity note for a conversational assistant. Preserve only details that matter later: user identity/preferences, goals and constraints, important facts, emotional context the user explicitly expressed, corrections, decisions, promises, unresolved questions, and prior advice. Do not invent details, diagnose feelings, or include filler. Use short bullet points.' },
         ...(conversationSummary ? [{ role: 'system', content: `Existing continuity note:\n${conversationSummary}` }] : []),
@@ -256,15 +265,15 @@ async function getJarvisReply(onChunk) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
     body: JSON.stringify({
-      model: GROQ_MODEL,
+      model: conversationUsesVision ? GROQ_VISION_MODEL : GROQ_MODEL,
       messages: [
         { role: 'system', content: buildSystemPrompt() },
         ...(conversationSummary ? [{ role: 'system', content: `Continuity note from earlier in this chat:\n${conversationSummary}` }] : []),
-        ...(documentContext ? [{ role: 'system', content: `The user attached this document. Use it as context when relevant:\n\n${documentContext}` }] : []),
         ...conversation
       ],
       temperature: 0.7,
       max_tokens: 700,
+      ...(conversationUsesVision ? { reasoning_effort: 'none' } : {}),
       stream: true
     })
   });
@@ -312,10 +321,24 @@ async function getJarvisReply(onChunk) {
 form.addEventListener('submit', async event => {
   event.preventDefault();
   const text = input.value.trim();
-  if (!text || waitingForReply) return;
+  const fileForTurn = attachedFile;
+  if ((!text && !fileForTurn) || waitingForReply) return;
   if (!userName) userName = detectName(text);
-  const userBubble = addMessage('user', text);
-  conversation.push({ role: 'user', content: text });
+  const visibleMessage = text || (fileForTurn?.kind === 'image' ? 'Please describe this image.' : 'Please review this attachment.');
+  const userBubble = addMessage('user', visibleMessage, false, fileForTurn?.kind === 'image' ? fileForTurn.dataUrl : '');
+  const userContent = fileForTurn?.kind === 'image'
+    ? [
+        { type: 'text', text: visibleMessage },
+        { type: 'image_url', image_url: { url: fileForTurn.dataUrl } }
+      ]
+    : fileForTurn
+      ? `${visibleMessage}\n\nAttached file: ${fileForTurn.name}\n\n--- Begin attachment content ---\n${fileForTurn.content}\n--- End attachment content ---`
+      : text;
+  conversation.push({ role: 'user', content: userContent });
+  if (fileForTurn?.kind === 'image') {
+    conversationUsesVision = true;
+  }
+  if (fileForTurn) clearAttachment();
   input.value = ''; autoResize(); setBusy(true); showTyping();
   try {
     let replyBubble = null;
@@ -337,6 +360,7 @@ form.addEventListener('submit', async event => {
     // Keep the failed text in the composer and remove its visual/prompt turn for a clean retry.
     conversation.pop();
     userBubble.closest('.message-row')?.remove();
+    if (fileForTurn) setAttachment(fileForTurn);
     input.value = text;
     autoResize();
   } finally { setBusy(false); input.focus(); resumeVoiceListening(); }
@@ -350,24 +374,88 @@ document.querySelector('#new-chat').addEventListener('click', () => {
   if (!waitingForReply && (conversation.length === 0 || confirm('Start a new chat? Your current conversation will be cleared.'))) resetChat();
 });
 
-documentInput.addEventListener('change', async event => {
+function clearAttachment() {
+  attachedFile = null;
+  attachmentInput.value = '';
+  attachmentPreview.removeAttribute('src');
+  attachmentPreview.hidden = true;
+  attachmentStatus.hidden = true;
+}
+
+function setAttachment(file) {
+  attachedFile = file;
+  attachmentName.textContent = file.name;
+  attachmentPreview.hidden = file.kind !== 'image';
+  if (file.kind === 'image') attachmentPreview.src = file.dataUrl;
+  attachmentStatus.hidden = false;
+}
+
+function readImageAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('Jarvis could not read this image. Please try another file.'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function trimAttachmentText(text) {
+  const maxCharacters = 24000;
+  const cleaned = text.replace(/\u0000/g, '').trim();
+  if (!cleaned) throw new Error('This file has no readable text.');
+  return cleaned.slice(0, maxCharacters);
+}
+
+async function extractPdfText(file) {
+  const pdfjs = await import('https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.min.mjs');
+  const pdf = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()), disableWorker: true }).promise;
+  let text = '';
+  for (let pageNumber = 1; pageNumber <= pdf.numPages && text.length < 24000; pageNumber += 1) {
+    const page = await pdf.getPage(pageNumber);
+    const pageText = await page.getTextContent();
+    text += `\n[Page ${pageNumber}]\n${pageText.items.map(item => item.str).join(' ')}`;
+  }
+  return trimAttachmentText(text);
+}
+
+async function extractDocxText(file) {
+  const { default: JSZip } = await import('https://cdn.jsdelivr.net/npm/jszip@3.10.1/+esm');
+  const archive = await JSZip.loadAsync(await file.arrayBuffer());
+  const documentXml = await archive.file('word/document.xml')?.async('text');
+  if (!documentXml) throw new Error('This Word document has no readable body text.');
+  const xml = new DOMParser().parseFromString(documentXml, 'application/xml');
+  const paragraphs = [...xml.getElementsByTagNameNS('http://schemas.openxmlformats.org/wordprocessingml/2006/main', 'p')]
+    .map(paragraph => [...paragraph.getElementsByTagNameNS('http://schemas.openxmlformats.org/wordprocessingml/2006/main', 't')].map(node => node.textContent).join(''));
+  return trimAttachmentText(paragraphs.join('\n'));
+}
+
+async function extractFileText(file) {
+  const name = file.name.toLowerCase();
+  if (file.type === 'application/pdf' || name.endsWith('.pdf')) return extractPdfText(file);
+  if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || name.endsWith('.docx')) return extractDocxText(file);
+  if (/\.(txt|md|csv|json|xml|html|css|js|ts|py|java|c|cpp|log)$/i.test(name) || file.type.startsWith('text/')) {
+    return trimAttachmentText(await file.text());
+  }
+  throw new Error('Supported attachments are images, TXT, Markdown, CSV, JSON, PDF, and DOCX files.');
+}
+
+attachmentInput.addEventListener('change', async event => {
   const file = event.target.files[0];
   if (!file) return;
-  const maxCharacters = 24000;
   try {
-    const text = await file.text();
-    if (!text.trim()) throw new Error('This document has no readable text.');
-    documentContext = text.slice(0, maxCharacters);
-    documentName.textContent = text.length > maxCharacters ? `${file.name} (first 24,000 characters)` : file.name;
-    documentStatus.hidden = false;
+    if (file.type.startsWith('image/')) {
+      const dataUrl = await readImageAsDataUrl(file);
+      setAttachment({ name: file.name, kind: 'image', dataUrl });
+    } else {
+      const content = await extractFileText(file);
+      setAttachment({ name: file.name, kind: 'text', content });
+    }
   } catch (error) {
-    documentContext = '';
-    alert(error.message || 'Jarvis could not read this document. Use a text, Markdown, CSV, or JSON file.');
+    clearAttachment();
+    alert(error.message || 'Jarvis could not read this file. Please try another file.');
   }
 });
-document.querySelector('#remove-document').addEventListener('click', () => {
-  documentContext = ''; documentInput.value = ''; documentStatus.hidden = true;
-});
+document.querySelector('#remove-attachment').addEventListener('click', clearAttachment);
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 if (SpeechRecognition) {

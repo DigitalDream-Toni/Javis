@@ -14,7 +14,7 @@ Jarvis 2.0 is a browser-based conversational AI demo by Digital Dream. It includ
 - Transparent handling of uncertainty for current, emerging, and niche information; no fabricated live-source claims
 - Improved multi-topic dialogue handling, creative-writing direction, and recoverable network/API failures
 - New-chat and text-file chat export controls
-- Optional text, Markdown, CSV, and JSON file context (first 24,000 characters)
+- Attach images, TXT, Markdown, CSV, JSON, PDF, or DOCX files; Jarvis sends the selected file content together with the user's message
 - Automatic message-area resizing
 - Voice conversations that prefer a natural English male browser voice, where Web Speech APIs are supported
 - A required per-session voice preference modal for Male or Female Jarvis voices
@@ -31,7 +31,7 @@ Jarvis 2.0 is a browser-based conversational AI demo by Digital Dream. It includ
 | `login.html` | Standalone login-page design preview |
 | `signup.html` | Standalone sign-up-page design preview |
 | `style.css` | Shared styling for all pages |
-| `script.js` | Chat, attachments, exports, voice, and UI behavior |
+| `script.js` | Chat, image attachments, exports, voice, and UI behavior |
 | `auth.js` | Login/sign-up preview behavior and welcome voice |
 | `config.js` | Groq API configuration |
 | `preloader.js` | Loading-screen behavior |
