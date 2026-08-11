@@ -20,7 +20,7 @@ Jarvis 2.0 is a browser-based conversational AI demo by Digital Dream. It includ
 - Voice conversations that prefer a natural English male browser voice, where Web Speech APIs are supported
 - A required per-session voice preference modal for Male or Female Jarvis voices
 - Immersive voice mode with an animated Jarvis presence, live listening/thinking/speaking states, an audio visualizer, and conversation-responsive scene moods
-- Standalone login and sign-up design previews with automatic Jarvis welcome messages
+- Linked login and sign-up design previews with automatic Jarvis welcome messages
 - A 2.5-second loading screen and unsaved-chat warning
 - No account or browser storage; refreshing clears the conversation
 
@@ -30,8 +30,8 @@ Jarvis 2.0 is a browser-based conversational AI demo by Digital Dream. It includ
 | --- | --- |
 | `index.html` | Jarvis product and introduction page |
 | `chat.html` | Chat interface markup |
-| `login.html` | Standalone login-page design preview |
-| `signup.html` | Standalone sign-up-page design preview |
+| `login.html` | Linked login-page design preview |
+| `signup.html` | Linked sign-up-page design preview |
 | `style.css` | Shared styling for all pages |
 | `script.js` | Chat, attachment handling, exports, voice, immersive voice-scene behavior, and UI logic |
 | `auth.js` | Login/sign-up preview behavior and welcome voice |
@@ -81,7 +81,7 @@ The app does not impose a file-size limit, but Groq and the selected model enfor
 
 ## Account-page previews
 
-`login.html` and `signup.html` are standalone visual previews and are not linked from the landing or chat pages. Their form and social sign-in controls do not authenticate users yet.
+`login.html` and `signup.html` are visual previews linked from the landing-page navigation. Their form and social sign-in controls do not authenticate users yet.
 
 - **Login:** Email or username, password, forgot-password link, and Google, Apple ID, and Facebook options.
 - **Sign-up:** Full name, email, password, confirm password, and Google, Apple ID, and Facebook options.
