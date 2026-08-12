@@ -283,25 +283,18 @@ function detectName(message) {
 }
 
 async function getJarvisReply(onChunk) {
-  if (!API_KEY || API_KEY === 'YOUR_API_KEY_HERE') {
-    throw new Error('Add your OpenAI API key to config.js before chatting.');
-  }
-  // Preserve long-running conversational context without letting old turns crowd out new ones.
-  try { await compactConversationIfNeeded(); } catch (_) { /* Keep the full history if compaction is temporarily unavailable. */ }
-  const response = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
+  const response = await fetchWithTimeout('/api/chat', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: conversationUsesVision ? OPENAI_VISION_MODEL : OPENAI_MODEL,
+      session_id: 'jarvis-' + crypto.randomUUID().replace(/-/g, '').slice(0, 16),
       messages: [
         { role: 'system', content: buildSystemPrompt() },
         ...(conversationSummary ? [{ role: 'system', content: `Continuity note from earlier in this chat:
 ${conversationSummary}` }] : []),
         ...conversation
       ],
-      temperature: 0.7,
-      max_tokens: 700,
-      stream: true
+      uses_vision: conversationUsesVision
     })
   });
   if (!response.ok) {
