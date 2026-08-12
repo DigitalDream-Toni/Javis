@@ -2,7 +2,7 @@
   Paste your Groq API key between the quotes.
   Get or manage a key at: https://console.groq.com/keys
 */
-const API_KEY = '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';
+const API_KEY = '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';
 
 // Jarvis uses Llama 3.3 70B for text-only chats.
 const GROQ_MODEL = "llama-3.3-70b-versatile";
