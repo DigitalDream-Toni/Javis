@@ -166,18 +166,20 @@ async function compactConversationIfNeeded() {
   if (conversation.length <= recentTurnLimit) return;
 
   const olderMessages = conversation.slice(0, conversation.length - recentTurnLimit);
-  const response = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
+  const response = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
     body: JSON.stringify({
-      model: conversationUsesVision ? GROQ_VISION_MODEL : GROQ_MODEL,
+      model: conversationUsesVision ? OPENAI_VISION_MODEL : OPENAI_MODEL,
       messages: [
-        { role: 'system', content: 'Create a compact, factual continuity note for a conversational assistant. Preserve only details that matter later: user identity/preferences, goals and constraints, important facts, emotional context the user explicitly expressed, corrections, decisions, promises, unresolved questions, and prior advice. Do not invent details, diagnose feelings, or include filler. Use short bullet points.' },
-        ...(conversationSummary ? [{ role: 'system', content: `Existing continuity note:\n${conversationSummary}` }] : []),
-        ...olderMessages
+        { role: 'system', content: buildSystemPrompt() },
+        ...(conversationSummary ? [{ role: 'system', content: `Continuity note from earlier in this chat:
+${conversationSummary}` }] : []),
+        ...conversation
       ],
-      temperature: 0.1,
-      max_tokens: 450
+      temperature: 0.7,
+      max_tokens: 700,
+      stream: true
     })
   });
   if (!response.ok) throw new Error('Conversation context could not be compacted.');
@@ -282,25 +284,23 @@ function detectName(message) {
 
 async function getJarvisReply(onChunk) {
   if (!API_KEY || API_KEY === 'YOUR_API_KEY_HERE') {
-    throw new Error('Add your Groq API key to config.js before chatting.');
+    throw new Error('Add your OpenAI API key to config.js before chatting.');
   }
   // Preserve long-running conversational context without letting old turns crowd out new ones.
   try { await compactConversationIfNeeded(); } catch (_) { /* Keep the full history if compaction is temporarily unavailable. */ }
-  // Groq uses an OpenAI-compatible chat-completions API.
-  const endpoint = 'https://api.groq.com/openai/v1/chat/completions';
-  const response = await fetchWithTimeout(endpoint, {
+  const response = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
     body: JSON.stringify({
-      model: conversationUsesVision ? GROQ_VISION_MODEL : GROQ_MODEL,
+      model: conversationUsesVision ? OPENAI_VISION_MODEL : OPENAI_MODEL,
       messages: [
         { role: 'system', content: buildSystemPrompt() },
-        ...(conversationSummary ? [{ role: 'system', content: `Continuity note from earlier in this chat:\n${conversationSummary}` }] : []),
+        ...(conversationSummary ? [{ role: 'system', content: `Continuity note from earlier in this chat:
+${conversationSummary}` }] : []),
         ...conversation
       ],
       temperature: 0.7,
       max_tokens: 700,
-      ...(conversationUsesVision ? { reasoning_effort: 'none' } : {}),
       stream: true
     })
   });
