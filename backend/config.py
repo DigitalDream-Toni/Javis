@@ -14,12 +14,14 @@ def load_dotenv() -> None:
     env_file = PROJECT_ROOT / ".env"
     if not env_file.exists():
         return
-    for raw_line in env_file.read_text(encoding="utf-8").splitlines():
+    for raw_line in env_file.read_text(encoding="utf-8-sig").splitlines():
         line = raw_line.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue
         key, value = line.split("=", 1)
-        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+        key = key.strip().lstrip("\ufeff")
+        value = value.strip().strip('"').strip("'")
+        os.environ.setdefault(key, value)
 
 
 load_dotenv()
@@ -27,9 +29,9 @@ load_dotenv()
 
 @dataclass(frozen=True)
 class Settings:
-    openai_api_key: str = os.getenv("OPENAI_API_KEY", os.getenv("GROQ_API_KEY", ""))
-    text_model: str = os.getenv("TEXT_MODEL", "gpt-4o-mini")
-    vision_model: str = os.getenv("VISION_MODEL", "gpt-4o-mini")
+    groq_api_key: str = os.getenv("GROQ_API_KEY", "")
+    text_model: str = os.getenv("TEXT_MODEL", "llama-3.3-70b-versatile")
+    vision_model: str = os.getenv("VISION_MODEL", "qwen/qwen3.6-27b")
     fine_tuned_model: str = os.getenv("FINE_TUNED_MODEL", "")
     database_path: Path = PROJECT_ROOT / os.getenv("DATABASE_PATH", "data/jarvis.db")
 
