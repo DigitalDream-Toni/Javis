@@ -32,6 +32,15 @@ let microphonePermissionGranted = false;
 let microphonePermissionRequest = null;
 let userVoicePreference = '';
 
+const API_BASE_URL = (() => {
+  const { origin, hostname, port } = window.location;
+  if (port === '8000' || origin.includes(':8000')) return '';
+  if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0') {
+    return 'http://localhost:8000';
+  }
+  return '';
+})();
+
 const intro = 'Hello, I’m Jarvis. What should I call you? And how is your day going so far?';
 
 function scrollToLatest() {
@@ -269,7 +278,7 @@ function detectName(message) {
 }
 
 async function getJarvisReply(onChunk) {
-  const response = await fetchWithTimeout('/api/chat', {
+  const response = await fetchWithTimeout(`${API_BASE_URL}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
