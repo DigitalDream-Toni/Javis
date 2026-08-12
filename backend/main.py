@@ -87,7 +87,7 @@ async def put_profile(profile_id: str, request: ProfileRequest) -> dict[str, str
 
 @app.post("/api/chat")
 async def chat(request: ChatRequest) -> JSONResponse:
-    if not settings.openai_api_key or settings.openai_api_key == "YOUR_API_KEY_HERE":
+    if not settings.openai_api_key or settings.openai_api_key == "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":
         raise HTTPException(status_code=503, detail="The server is missing OPENAI_API_KEY. Add it to .env before chatting.")
     if not request.messages:
         raise HTTPException(status_code=400, detail="A chat message is required.")
