@@ -87,8 +87,8 @@ async def put_profile(profile_id: str, request: ProfileRequest) -> dict[str, str
 
 @app.post("/api/chat")
 async def chat(request: ChatRequest) -> JSONResponse:
-    if not settings.groq_api_key or settings.groq_api_key == "YOUR_API_KEY_HERE":
-        raise HTTPException(status_code=503, detail="The server is missing GROQ_API_KEY. Add it to .env before chatting.")
+    if not settings.openai_api_key or settings.openai_api_key == "YOUR_API_KEY_HERE":
+        raise HTTPException(status_code=503, detail="The server is missing OPENAI_API_KEY. Add it to .env before chatting.")
     if not request.messages:
         raise HTTPException(status_code=400, detail="A chat message is required.")
 
