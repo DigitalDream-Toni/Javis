@@ -32,15 +32,6 @@ let microphonePermissionGranted = false;
 let microphonePermissionRequest = null;
 let userVoicePreference = '';
 
-const API_BASE_URL = (() => {
-  const { origin, hostname, port } = window.location;
-  if (port === '8000' || origin.includes(':8000')) return '';
-  if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0') {
-    return 'http://localhost:8000';
-  }
-  return '';
-})();
-
 const intro = 'Hello, I’m Jarvis. What should I call you? And how is your day going so far?';
 
 function scrollToLatest() {
@@ -175,15 +166,27 @@ async function compactConversationIfNeeded() {
   if (conversation.length <= recentTurnLimit) return;
 
   const olderMessages = conversation.slice(0, conversation.length - recentTurnLimit);
-  const summaryLines = olderMessages
-    .map(message => {
-      const text = typeof message.content === 'string' ? message.content : JSON.stringify(message.content);
-      return `- ${message.role}: ${text.slice(0, 300)}`;
+  const response = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
+    body: JSON.stringify({
+      model: conversationUsesVision ? GROQ_VISION_MODEL : GROQ_MODEL,
+      messages: [
+        { role: 'system', content: 'Create a compact, factual continuity note for a conversational assistant. Preserve only details that matter later: user identity/preferences, goals and constraints, important facts, emotional context the user explicitly expressed, corrections, decisions, promises, unresolved questions, and prior advice. Do not invent details, diagnose feelings, or include filler. Use short bullet points.' },
+        ...(conversationSummary ? [{ role: 'system', content: `Existing continuity note:\n${conversationSummary}` }] : []),
+        ...olderMessages
+      ],
+      temperature: 0.1,
+      max_tokens: 450
     })
-    .join('\n');
-
-  conversationSummary = (conversationSummary ? `${conversationSummary}\n` : '') + summaryLines.slice(0, 1200);
-  conversation = conversation.slice(-recentTurnLimit);
+  });
+  if (!response.ok) throw new Error('Conversation context could not be compacted.');
+  const data = await response.json();
+  const summary = data.choices?.[0]?.message?.content?.trim();
+  if (summary) {
+    conversationSummary = summary;
+    conversation = conversation.slice(-recentTurnLimit);
+  }
 }
 
 function chooseJarvisVoice() {
@@ -278,18 +281,27 @@ function detectName(message) {
 }
 
 async function getJarvisReply(onChunk) {
-  const response = await fetchWithTimeout(`${API_BASE_URL}/api/chat`, {
+  if (!API_KEY || API_KEY === 'YOUR_API_KEY_HERE') {
+    throw new Error('Add your Groq API key to config.js before chatting.');
+  }
+  // Preserve long-running conversational context without letting old turns crowd out new ones.
+  try { await compactConversationIfNeeded(); } catch (_) { /* Keep the full history if compaction is temporarily unavailable. */ }
+  // Groq uses an OpenAI-compatible chat-completions API.
+  const endpoint = 'https://api.groq.com/openai/v1/chat/completions';
+  const response = await fetchWithTimeout(endpoint, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
     body: JSON.stringify({
-      session_id: 'jarvis-' + crypto.randomUUID().replace(/-/g, '').slice(0, 16),
+      model: conversationUsesVision ? GROQ_VISION_MODEL : GROQ_MODEL,
       messages: [
         { role: 'system', content: buildSystemPrompt() },
-        ...(conversationSummary ? [{ role: 'system', content: `Continuity note from earlier in this chat:
-${conversationSummary}` }] : []),
+        ...(conversationSummary ? [{ role: 'system', content: `Continuity note from earlier in this chat:\n${conversationSummary}` }] : []),
         ...conversation
       ],
-      uses_vision: conversationUsesVision
+      temperature: 0.7,
+      max_tokens: 700,
+      ...(conversationUsesVision ? { reasoning_effort: 'none' } : {}),
+      stream: true
     })
   });
   if (!response.ok) {

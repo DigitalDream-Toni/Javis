@@ -14,14 +14,12 @@ def load_dotenv() -> None:
     env_file = PROJECT_ROOT / ".env"
     if not env_file.exists():
         return
-    for raw_line in env_file.read_text(encoding="utf-8-sig").splitlines():
+    for raw_line in env_file.read_text(encoding="utf-8").splitlines():
         line = raw_line.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue
         key, value = line.split("=", 1)
-        key = key.strip().lstrip("\ufeff")
-        value = value.strip().strip('"').strip("'")
-        os.environ.setdefault(key, value)
+        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
 
 
 load_dotenv()

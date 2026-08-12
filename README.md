@@ -1,11 +1,11 @@
 # Jarvis 2.0
 
-Jarvis 2.0 is a browser-based conversational AI demo by Digital Dream. It includes an editorial product page and a chat interface powered by Groq's OpenAI-compatible chat API. It is a static front-end project: chat state exists only for the current page session.
+Jarvis 2.0 is a browser-based conversational AI demo by Digital Dream. It includes an editorial product page and a chat interface powered by Groq's OpenAI-compatible Chat Completions API. It is a static front-end project: chat state exists only for the current page session.
 
 ## Features
 
 - Responsive product landing page
-- Text and image chat powered by Groq models via the secure backend
+- Text chat powered by Groq's Llama 3.3 70B model, with Qwen 3.6 27B used automatically for image turns
 - Streaming replies that appear as Jarvis generates them
 - Context-aware replies that account for implied meaning, corrections, idioms, and conversational intent
 - Emotionally aware, practical support with calibrated empathy and responsible health-safety guidance
@@ -35,7 +35,7 @@ Jarvis 2.0 is a browser-based conversational AI demo by Digital Dream. It includ
 | `style.css` | Shared styling for all pages |
 | `script.js` | Chat, attachment handling, exports, voice, immersive voice-scene behavior, and UI logic |
 | `auth.js` | Login/sign-up preview behavior and welcome voice |
-| `config.js` | Groq model configuration and local demo API key setup |
+| `config.js` | Text and vision Groq model configuration plus the local-demo API key |
 | `preloader.js` | Loading-screen behavior |
 | `favicon.svg` | Site favicon |
 
@@ -59,9 +59,9 @@ git diff --check
 
 ## Configure Groq
 
-1. Create or retrieve a Groq API key from [Groq Cloud](https://console.groq.com/keys).
+1. Create or retrieve a Groq API key from [GroqCloud](https://console.groq.com/keys).
 2. In `config.js`, set `API_KEY` to that key.
-3. Jarvis uses Llama 3.3 70B for text-only chat and the Qwen 3.6 27B vision-capable model when the user attaches an image.
+3. Jarvis uses Llama 3.3 70B for text-only chat and Qwen 3.6 27B when the user attaches an image.
 
 ```js
 const API_KEY = 'YOUR_API_KEY_HERE';

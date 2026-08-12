@@ -1,4 +1,4 @@
-﻿"""FastAPI gateway for Jarvis chat, memory, profiles, and safe tools."""
+"""FastAPI gateway for Jarvis chat, memory, profiles, and safe tools."""
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
@@ -101,26 +101,16 @@ async def chat(request: ChatRequest) -> JSONResponse:
         async with httpx.AsyncClient(timeout=60) as client:
             response = await client.post(
                 "https://api.groq.com/openai/v1/chat/completions",
-                headers={"Authorization": f"Bearer {settings.groq_api_key}", "Content-Type": "application/json"},
+                headers={"Authorization": f"Bearer {settings.groq_api_key}"},
                 json=payload,
             )
         if response.is_error:
-            error_body = response.json()
-            if isinstance(error_body, dict):
-                error = error_body.get("error", {})
-                if isinstance(error, dict):
-                    detail = error.get("message", "The AI service could not complete the request.")
-                else:
-                    detail = str(error) or "The AI service could not complete the request."
-            else:
-                detail = str(error_body) or "The AI service could not complete the request."
+            detail = response.json().get("error", {}).get("message", "The AI service could not complete the request.")
             raise HTTPException(status_code=response.status_code, detail=detail)
-        reply = response.json()["choices"][0]["message"]["content"]
-        if isinstance(reply, list):
-            reply = "".join(part.get("text", "") for part in reply if isinstance(part, dict))
-        reply = str(reply).strip()
+        reply = response.json()["choices"][0]["message"]["content"].strip()
     except httpx.HTTPError as error:
         raise HTTPException(status_code=502, detail="Jarvis could not reach the AI service.") from error
+
     database.ensure_session(request.session_id, request.profile_id)
     database.add_message(request.session_id, "user", request.messages[-1].get("content", ""))
     database.add_message(request.session_id, "assistant", reply)
