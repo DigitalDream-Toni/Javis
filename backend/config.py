@@ -27,9 +27,9 @@ load_dotenv()
 
 @dataclass(frozen=True)
 class Settings:
-    groq_api_key: str = os.getenv("GROQ_API_KEY", "")
-    text_model: str = os.getenv("TEXT_MODEL", "llama-3.3-70b-versatile")
-    vision_model: str = os.getenv("VISION_MODEL", "qwen/qwen3.6-27b")
+    openai_api_key: str = os.getenv("OPENAI_API_KEY", os.getenv("GROQ_API_KEY", ""))
+    text_model: str = os.getenv("TEXT_MODEL", "gpt-4o-mini")
+    vision_model: str = os.getenv("VISION_MODEL", "gpt-4o-mini")
     fine_tuned_model: str = os.getenv("FINE_TUNED_MODEL", "")
     database_path: Path = PROJECT_ROOT / os.getenv("DATABASE_PATH", "data/jarvis.db")
 

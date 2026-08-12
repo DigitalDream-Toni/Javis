@@ -1,11 +1,11 @@
 # Jarvis 2.0
 
-Jarvis 2.0 is a browser-based conversational AI demo by Digital Dream. It includes an editorial product page and a chat interface powered by Groq's OpenAI-compatible Chat Completions API. It is a static front-end project: chat state exists only for the current page session.
+Jarvis 2.0 is a browser-based conversational AI demo by Digital Dream. It includes an editorial product page and a chat interface powered by OpenAI's Chat Completions API. It is a static front-end project: chat state exists only for the current page session.
 
 ## Features
 
 - Responsive product landing page
-- Text chat powered by Groq's Llama 3.3 70B model, with Qwen 3.6 27B used automatically for image turns
+- Text and image chat powered by OpenAI GPT-4o mini
 - Streaming replies that appear as Jarvis generates them
 - Context-aware replies that account for implied meaning, corrections, idioms, and conversational intent
 - Emotionally aware, practical support with calibrated empathy and responsible health-safety guidance
@@ -35,7 +35,7 @@ Jarvis 2.0 is a browser-based conversational AI demo by Digital Dream. It includ
 | `style.css` | Shared styling for all pages |
 | `script.js` | Chat, attachment handling, exports, voice, immersive voice-scene behavior, and UI logic |
 | `auth.js` | Login/sign-up preview behavior and welcome voice |
-| `config.js` | Text and vision Groq model configuration plus the local-demo API key |
+| `config.js` | Text and vision OpenAI model configuration plus the local-demo API key |
 | `preloader.js` | Loading-screen behavior |
 | `favicon.svg` | Site favicon |
 
@@ -57,27 +57,27 @@ node --check preloader.js
 git diff --check
 ```
 
-## Configure Groq
+## Configure OpenAI
 
-1. Create or retrieve a Groq API key from [GroqCloud](https://console.groq.com/keys).
+1. Create or retrieve a OpenAI API key from [OpenAI Platform](https://platform.openai.com/api-keys).
 2. In `config.js`, set `API_KEY` to that key.
 3. Jarvis uses Llama 3.3 70B for text-only chat and Qwen 3.6 27B when the user attaches an image.
 
 ```js
 const API_KEY = 'YOUR_API_KEY_HERE';
-const GROQ_MODEL = 'llama-3.3-70b-versatile';
-const GROQ_VISION_MODEL = 'qwen/qwen3.6-27b';
+const OPENAI_MODEL = 'gpt-4o-mini';
+const OPENAI_VISION_MODEL = 'gpt-4o-mini';
 ```
 
 ## Attachments
 
 The attachment picker accepts images plus `.txt`, `.md`, `.csv`, `.json`, `.pdf`, and `.docx` files. Images are sent to the configured vision model with the user's message. Text-based files are read in the browser; PDF text is extracted with PDF.js and DOCX body text with JSZip, both loaded from CDN when needed. Scanned PDFs, protected PDFs, legacy `.doc` files, spreadsheets other than CSV, audio, video, and other binary formats are not supported.
 
-The app does not impose a file-size limit, but Groq and the selected model enforce their own request limits. Large documents may also be truncated to the first 24,000 extracted characters.
+The app does not impose a file-size limit, but OpenAI and the selected model enforce their own request limits. Large documents may also be truncated to the first 24,000 extracted characters.
 
 ## Security note
 
-`config.js` is loaded in the browser, so any key placed there is visible to visitors. Use this approach only for private, local demos with a restricted, disposable key. For a deployed public site, move the Groq request and key to a secure server-side endpoint, and do not commit real credentials to version control. If a key is ever committed or shared, revoke and rotate it immediately.
+`config.js` is loaded in the browser, so any key placed there is visible to visitors. Use this approach only for private, local demos with a restricted, disposable key. For a deployed public site, move the OpenAI request and key to a secure server-side endpoint, and do not commit real credentials to version control. If a key is ever committed or shared, revoke and rotate it immediately.
 
 ## Account-page previews
 

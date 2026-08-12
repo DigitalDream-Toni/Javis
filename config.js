@@ -1,11 +1,11 @@
 /*
-  Paste your Groq API key between the quotes.
-  Get or manage a key at: https://console.groq.com/keys
+  Paste your OpenAI API key between the quotes.
+  Get or manage a key at: https://platform.openai.com/api-keys
 */
-const API_KEY = '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';
+const API_KEY = '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';
 
-// Jarvis uses Llama 3.3 70B for text-only chats.
-const GROQ_MODEL = "llama-3.3-70b-versatile";
+// Jarvis uses GPT-4o mini for text chats.
+const OPENAI_MODEL = "gpt-4o-mini";
 
-// Used automatically for image + text messages. This Groq model accepts vision inputs.
-const GROQ_VISION_MODEL = "qwen/qwen3.6-27b";
+// Used automatically for image + text messages. GPT-4o mini accepts vision inputs.
+const OPENAI_VISION_MODEL = "gpt-4o-mini";

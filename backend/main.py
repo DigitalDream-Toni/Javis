@@ -1,4 +1,4 @@
-"""FastAPI gateway for Jarvis chat, memory, profiles, and safe tools."""
+﻿"""FastAPI gateway for Jarvis chat, memory, profiles, and safe tools."""
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
@@ -87,30 +87,30 @@ async def put_profile(profile_id: str, request: ProfileRequest) -> dict[str, str
 
 @app.post("/api/chat")
 async def chat(request: ChatRequest) -> JSONResponse:
-    if not settings.groq_api_key or settings.groq_api_key == "YOUR_API_KEY_HERE":
-        raise HTTPException(status_code=503, detail="The server is missing GROQ_API_KEY. Add it to .env before chatting.")
+    if not settings.openai_api_key or settings.openai_api_key == "YOUR_API_KEY_HERE":
+        raise HTTPException(status_code=503, detail="The server is missing OPENAI_API_KEY. Add it to .env before chatting.")
     if not request.messages:
         raise HTTPException(status_code=400, detail="A chat message is required.")
 
     model = settings.model_for(request.uses_vision)
     payload: dict[str, Any] = {"model": model, "messages": request.messages, "temperature": 0.7, "max_tokens": 700}
-    if request.uses_vision and model.startswith("qwen/"):
-        payload["reasoning_effort"] = "none"
 
     try:
         async with httpx.AsyncClient(timeout=60) as client:
             response = await client.post(
-                "https://api.groq.com/openai/v1/chat/completions",
-                headers={"Authorization": f"Bearer {settings.groq_api_key}"},
+                "https://api.openai.com/v1/chat/completions",
+                headers={"Authorization": f"Bearer {settings.openai_api_key}", "Content-Type": "application/json"},
                 json=payload,
             )
         if response.is_error:
             detail = response.json().get("error", {}).get("message", "The AI service could not complete the request.")
             raise HTTPException(status_code=response.status_code, detail=detail)
-        reply = response.json()["choices"][0]["message"]["content"].strip()
+        reply = response.json()["choices"][0]["message"]["content"]
+        if isinstance(reply, list):
+            reply = "".join(part.get("text", "") for part in reply if isinstance(part, dict))
+        reply = str(reply).strip()
     except httpx.HTTPError as error:
         raise HTTPException(status_code=502, detail="Jarvis could not reach the AI service.") from error
-
     database.ensure_session(request.session_id, request.profile_id)
     database.add_message(request.session_id, "user", request.messages[-1].get("content", ""))
     database.add_message(request.session_id, "assistant", reply)
