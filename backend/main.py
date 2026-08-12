@@ -87,23 +87,33 @@ async def put_profile(profile_id: str, request: ProfileRequest) -> dict[str, str
 
 @app.post("/api/chat")
 async def chat(request: ChatRequest) -> JSONResponse:
-    if not settings.openai_api_key or settings.openai_api_key == "YOUR_API_KEY_HERE":
-        raise HTTPException(status_code=503, detail="The server is missing OPENAI_API_KEY. Add it to .env before chatting.")
+    if not settings.groq_api_key or settings.groq_api_key == "YOUR_API_KEY_HERE":
+        raise HTTPException(status_code=503, detail="The server is missing GROQ_API_KEY. Add it to .env before chatting.")
     if not request.messages:
         raise HTTPException(status_code=400, detail="A chat message is required.")
 
     model = settings.model_for(request.uses_vision)
     payload: dict[str, Any] = {"model": model, "messages": request.messages, "temperature": 0.7, "max_tokens": 700}
+    if request.uses_vision and model.startswith("qwen/"):
+        payload["reasoning_effort"] = "none"
 
     try:
         async with httpx.AsyncClient(timeout=60) as client:
             response = await client.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers={"Authorization": f"Bearer {settings.openai_api_key}", "Content-Type": "application/json"},
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={"Authorization": f"Bearer {settings.groq_api_key}", "Content-Type": "application/json"},
                 json=payload,
             )
         if response.is_error:
-            detail = response.json().get("error", {}).get("message", "The AI service could not complete the request.")
+            error_body = response.json()
+            if isinstance(error_body, dict):
+                error = error_body.get("error", {})
+                if isinstance(error, dict):
+                    detail = error.get("message", "The AI service could not complete the request.")
+                else:
+                    detail = str(error) or "The AI service could not complete the request."
+            else:
+                detail = str(error_body) or "The AI service could not complete the request."
             raise HTTPException(status_code=response.status_code, detail=detail)
         reply = response.json()["choices"][0]["message"]["content"]
         if isinstance(reply, list):

@@ -1,4 +1,4 @@
-﻿/* Jarvis 2.0 chat logic. No localStorage is used: refreshing clears the chat. */
+/* Jarvis 2.0 chat logic. No localStorage is used: refreshing clears the chat. */
 const messagesElement = document.querySelector('#messages');
 const chatMain = document.querySelector('.chat-main');
 const form = document.querySelector('#chat-form');
@@ -166,27 +166,15 @@ async function compactConversationIfNeeded() {
   if (conversation.length <= recentTurnLimit) return;
 
   const olderMessages = conversation.slice(0, conversation.length - recentTurnLimit);
-  const response = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
-    body: JSON.stringify({
-      model: conversationUsesVision ? OPENAI_VISION_MODEL : OPENAI_MODEL,
-      messages: [
-        { role: 'system', content: 'Create a compact, factual continuity note for a conversational assistant. Preserve only details that matter later: user identity/preferences, goals and constraints, important facts, emotional context the user explicitly expressed, corrections, decisions, promises, unresolved questions, and prior advice. Do not invent details, diagnose feelings, or include filler. Use short bullet points.' },
-        ...(conversationSummary ? [{ role: 'system', content: `Existing continuity note:\n${conversationSummary}` }] : []),
-        ...olderMessages
-      ],
-      temperature: 0.1,
-      max_tokens: 450
+  const summaryLines = olderMessages
+    .map(message => {
+      const text = typeof message.content === 'string' ? message.content : JSON.stringify(message.content);
+      return `- ${message.role}: ${text.slice(0, 300)}`;
     })
-  });
-  if (!response.ok) throw new Error('Conversation context could not be compacted.');
-  const data = await response.json();
-  const summary = data.choices?.[0]?.message?.content?.trim();
-  if (summary) {
-    conversationSummary = summary;
-    conversation = conversation.slice(-recentTurnLimit);
-  }
+    .join('\n');
+
+  conversationSummary = (conversationSummary ? `${conversationSummary}\n` : '') + summaryLines.slice(0, 1200);
+  conversation = conversation.slice(-recentTurnLimit);
 }
 
 function chooseJarvisVoice() {
@@ -281,24 +269,18 @@ function detectName(message) {
 }
 
 async function getJarvisReply(onChunk) {
-  if (!API_KEY || API_KEY === 'YOUR_API_KEY_HERE') {
-    throw new Error('Add your OpenAI API key to config.js before chatting.');
-  }
-  // Preserve long-running conversational context without letting old turns crowd out new ones.
-  try { await compactConversationIfNeeded(); } catch (_) { /* Keep the full history if compaction is temporarily unavailable. */ }
-    const response = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
+  const response = await fetchWithTimeout('/api/chat', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: conversationUsesVision ? OPENAI_VISION_MODEL : OPENAI_MODEL,
+      session_id: 'jarvis-' + crypto.randomUUID().replace(/-/g, '').slice(0, 16),
       messages: [
         { role: 'system', content: buildSystemPrompt() },
-        ...(conversationSummary ? [{ role: 'system', content: `Continuity note from earlier in this chat:\n${conversationSummary}` }] : []),
+        ...(conversationSummary ? [{ role: 'system', content: `Continuity note from earlier in this chat:
+${conversationSummary}` }] : []),
         ...conversation
       ],
-      temperature: 0.7,
-      max_tokens: 700,
-      stream: true
+      uses_vision: conversationUsesVision
     })
   });
   if (!response.ok) {
