@@ -166,29 +166,15 @@ async function compactConversationIfNeeded() {
   if (conversation.length <= recentTurnLimit) return;
 
   const olderMessages = conversation.slice(0, conversation.length - recentTurnLimit);
-  const response = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
-    body: JSON.stringify({
-      model: conversationUsesVision ? OPENAI_VISION_MODEL : OPENAI_MODEL,
-      messages: [
-        { role: 'system', content: buildSystemPrompt() },
-        ...(conversationSummary ? [{ role: 'system', content: `Continuity note from earlier in this chat:
-${conversationSummary}` }] : []),
-        ...conversation
-      ],
-      temperature: 0.7,
-      max_tokens: 700,
-      stream: true
+  const summaryLines = olderMessages
+    .map(message => {
+      const text = typeof message.content === 'string' ? message.content : JSON.stringify(message.content);
+      return `- ${message.role}: ${text.slice(0, 300)}`;
     })
-  });
-  if (!response.ok) throw new Error('Conversation context could not be compacted.');
-  const data = await response.json();
-  const summary = data.choices?.[0]?.message?.content?.trim();
-  if (summary) {
-    conversationSummary = summary;
-    conversation = conversation.slice(-recentTurnLimit);
-  }
+    .join('\n');
+
+  conversationSummary = (conversationSummary ? `${conversationSummary}\n` : '') + summaryLines.slice(0, 1200);
+  conversation = conversation.slice(-recentTurnLimit);
 }
 
 function chooseJarvisVoice() {
